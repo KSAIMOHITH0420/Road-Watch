@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoadWatch - City Pothole Grievance Portal</title>
+
+  <style>
+    
+    :root {
+      --primary: #0f766e;
+      --dark: #134e4a;
+      --red: #d90429;      
+      --green: #16a34a;
+      --bg: #f3f5f8;
+      --border: #d0d5dd;
+      --card: #ffffff;
+      --text: #1f2933;
+      --muted: #667085;
+      --soft: #eef2f6;
+      --badge: #e4e7ec;
+      --urgent: #fff5f5;
+    }
+
+    
+    :root[data-theme="dark"] {
+      --bg: #0f1a1c;
+      --card: #17252a;
+      --text: #e6edf0;
+      --muted: #9fb0b6;
+      --border: #2f4047;
+      --soft: #1f3036;
+      --badge: #2c3f46;
+      --urgent: #3a1a20;
+      --red: #ff4d6d;
+    }
+
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; transition: background 0.3s, color 0.3s; }
+
+  
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes roadMove { to { background-position: -80px 0; } }   
+    @keyframes drive    { to { left: 100%; } }                     
+
+    
+    .hero {
+      background: linear-gradient(135deg, var(--dark), var(--primary));
+      color: #fff;
+      text-align: center;
+      padding: 3rem 1rem 0;
+      position: relative;            
+      overflow: hidden;              
+    }
+    .hero > * { animation: fadeUp 0.8s ease both; }
+    .hero h1 { font-size: 2.6rem; animation-delay: 0.2s; }
+    .hero h1 span { color: #fcd34d; }          
+    .hero p  { animation-delay: 0.4s; margin-top: 0.5rem; }
+    .hero-btn {
+      display: inline-block;
+      margin-top: 1.25rem;
+      padding: 0.75rem 1.5rem;
+      background: #fcd34d;
+      color: #1f2933;
+      font-weight: 700;
+      text-decoration: none;
+      border-radius: 999px;
+      animation-delay: 0.6s;
+    }
+
+    
+    .road { position: relative; height: 70px; margin-top: 2rem; background: #2b2f36; }
+    .road-line {
+      position: absolute; top: 50%; width: 100%; height: 6px;
+      background: repeating-linear-gradient(90deg, #fff 0 40px, transparent 40px 80px);
+      animation: roadMove 1s linear infinite;
+    }
+    .car {
+      position: absolute; bottom: 8px; left: -60px;
+      font-size: 2rem;
+      transform: scaleX(-1);         
+      animation: drive 6s linear infinite;
+    }
+
+    /* ---------- Layout ---------- */
+    main { max-width: 1000px; margin: 0 auto; padding: 1rem; }
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      animation: fadeUp 0.8s ease both;
+    }
+    .card h2 { margin-bottom: 1rem; }
+
+    /* ---------- Form ---------- */
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }   
+    .field { display: flex; flex-direction: column; margin-bottom: 0.75rem; }
+    label { font-weight: 600; margin-bottom: 0.3rem; }
+    small { color: var(--muted); }
+    input, select {
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+      background: var(--card);
+      color: var(--text);
+    }
+    input:focus, select:focus { outline: 2px solid var(--primary); }
+    .checkbox { flex-direction: row; align-items: center; gap: 0.5rem; }
+    .checkbox label { margin: 0; font-weight: 500; }
+
+    #message { min-height: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .error { color: var(--red); }
+    .success { color: var(--green); }
+
+  
+    button { border: none; border-radius: 6px; padding: 0.65rem 1.2rem; font-size: 1rem; cursor: pointer; color: #fff; background: var(--primary); }
+    button:hover { background: var(--dark); }
+    .confirm-btn { background: var(--green); padding: 0.4rem 0.7rem; font-size: 0.85rem; }
+    button:disabled { background: #98a2b3; cursor: not-allowed; }
+    .theme-btn {
+      position: absolute; top: 1rem; right: 1rem;
+      padding: 0.4rem 0.9rem; font-size: 0.85rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 999px;
+    }
+    .theme-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+    
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.8rem; background: var(--badge); font-weight: 600; }
+    .badge.urgent { background: var(--red); color: #fff; font-weight: 800; text-transform: uppercase; }
+
+    
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+    .stat { text-align: center; padding: 0.75rem; background: var(--soft); border-radius: 8px; }
+    .stat strong { display: block; font-size: 1.6rem; }
+    .stat.red strong { color: var(--red); }
+    .stat.green strong { color: var(--green); }
+
+    
+    .filters { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+    .wide { grid-column: 1 / -1; }               
+    #count { color: var(--muted); margin-bottom: 0.75rem; }
+    .table-wrap { overflow-x: auto; }            
+    table { width: 100%; border-collapse: collapse; min-width: 780px; }
+    th, td { text-align: left; padding: 0.65rem; border-bottom: 1px solid var(--border); }
+    th { background: var(--soft); }
+    tr.urgent-row { background: var(--urgent); }
+    tr.urgent-row td:first-child { border-left: 5px solid var(--red); }
+
+    footer { text-align: center; color: var(--muted); padding: 1.5rem; font-size: 0.85rem; }
+
+    
+    @media (min-width: 700px) {
+      .form-grid, .filters { grid-template-columns: 1fr 1fr; }
+      .hero h1 { font-size: 3.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  
+  <header class="hero">
+    <button type="button" id="theme-btn" class="theme-btn">🌙 Dark</button>
+    <h1>🚧 Road<span>Watch</span></h1>
+    <p>Spot it. Report it. Track it until it's fixed.</p>
+    <a href="#report" class="hero-btn">Report a Pothole →</a>
+    <div class="road">
+      <div class="road-line"></div>
+      <span class="car">🚗</span>
+    </div>
+  </header>
+
+  <main>
+
+    
+    <section class="card" id="report">
+      <h2>Report a Road Problem</h2>
+      <form id="report-form">
+        <div class="form-grid">
+          <div class="field">
+            <label for="street">Street Name</label>
+            <input type="text" id="street" placeholder="e.g. Nehru Road">
+          </div>
+          <div class="field">
+            <label for="landmark">Landmark</label>
+            <input type="text" id="landmark" placeholder="e.g. Near City Hospital">
+          </div>
+          <div class="field">
+            <label for="ward">Ward Number</label>
+            <input type="number" id="ward" min="1" max="50" placeholder="1 - 50">
+          </div>
+          <div class="field">
+            <label for="severity">Severity</label>
+            <select id="severity">
+              <option value="">-- Select --</option>
+              <option>Minor Crack</option>
+              <option>Deep Pothole</option>
+              <option>Open Manhole</option>
+            </select>
+          </div>
+        </div>
+
+        
+        <div class="field checkbox">
+          <input type="checkbox" id="arterial">
+          <label for="arterial">This is a busy arterial (main) road</label>
+        </div>
+
+        
+        <div class="field">
+          <label for="photo">Photo (placeholder)</label>
+          <input type="file" id="photo" accept="image/*">
+          <small>Demo only – the photo is not uploaded.</small>
+        </div>
+
+        
+        <div class="field">
+          <label>Priority preview</label>
+          <div id="preview"><span class="badge">Select severity</span></div>
+        </div>
+
+        <p id="message"></p>
+        <button type="submit">Submit Complaint</button>
+      </form>
+    </section>
+
+    
+    <section class="card">
+      <h2>Repair Tracker</h2>
+
+      <div class="stats">
+        <div class="stat"><strong id="stat-total">0</strong>Total</div>
+        <div class="stat red"><strong id="stat-urgent">0</strong>Urgent open</div>
+        <div class="stat green"><strong id="stat-repaired">0</strong>Repaired</div>
+      </div>
+
+      <div class="filters">
+        <!-- search box: filters the table as you type -->
+        <div class="field wide">
+          <label for="search">Search street or landmark</label>
+          <input type="text" id="search" placeholder="Type to search...">
+        </div>
+        <div class="field">
+          <label for="filter-ward">Filter by Ward</label>
+          <select id="filter-ward"><option value="all">All Wards</option></select>
+        </div>
+        <div class="field">
+          <label for="filter-status">Filter by Status</label>
+          <select id="filter-status">
+            <option value="all">All Statuses</option>
+            <option>Reported</option>
+            <option>Inspected</option>
+            <option>Work in Progress</option>
+            <option>Repaired</option>
+          </select>
+        </div>
+      </div>
+
+      
+      <p id="count"></p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Location</th><th>Ward</th><th>Reported</th><th>Severity</th>
+              <th>Priority</th><th>Status</th><th>Community</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>RoadWatch – HTML, CSS &amp; JavaScript project</footer>
+
+  <script>
+    
+    const STATUSES = ["Reported", "Inspected", "Work in Progress", "Repaired"];
+
+    
+    function dateText(daysBack) {
+      return new Date(Date.now() - daysBack * 86400000)
+        .toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    }
+
+    
+    const SAMPLE = [
+      { id: 1, street: "Nehru Road",     landmark: "Near City Hospital", ward: 5,  severity: "Open Manhole", arterial: true,  status: "Reported",         date: dateText(9), confirms: 0 },
+      { id: 2, street: "Gandhi Marg",    landmark: "Opp. Bus Stand",     ward: 12, severity: "Deep Pothole", arterial: true,  status: "Work in Progress", date: dateText(4), confirms: 0 },
+      { id: 3, street: "Lake View Lane", landmark: "Behind Park",        ward: 7,  severity: "Minor Crack",  arterial: false, status: "Inspected",        date: dateText(2), confirms: 0 },
+      { id: 4, street: "Market Street",  landmark: "Near Post Office",   ward: 5,  severity: "Deep Pothole", arterial: false, status: "Repaired",         date: dateText(12), confirms: 3 }
+    ];
+
+    
+    
+    let complaints = JSON.parse(localStorage.getItem("complaints")) || SAMPLE;
+    let confirmed  = JSON.parse(localStorage.getItem("confirmed")) || [];   
+
+    function save() {
+      localStorage.setItem("complaints", JSON.stringify(complaints));
+      localStorage.setItem("confirmed", JSON.stringify(confirmed));
+    }
+
+    
+    const form         = document.getElementById("report-form");
+    const message      = document.getElementById("message");
+    const severityBox  = document.getElementById("severity");
+    const arterialBox  = document.getElementById("arterial");
+    const preview      = document.getElementById("preview");
+    const tableBody    = document.getElementById("table-body");
+    const filterWard   = document.getElementById("filter-ward");
+    const filterStatus = document.getElementById("filter-status");
+    const searchBox    = document.getElementById("search");
+    const countLine    = document.getElementById("count");
+    const themeBtn     = document.getElementById("theme-btn");
+
+    
+    function isUrgent(severity, arterial) {
+      return (severity === "Deep Pothole" || severity === "Open Manhole") && arterial;
+    }
+
+    function badge(severity, arterial) {
+      return isUrgent(severity, arterial)
+        ? '<span class="badge urgent">⚠ Urgent</span>'
+        : '<span class="badge">Normal</span>';
+    }
+
+    
+    function updatePreview() {
+      preview.innerHTML = severityBox.value === ""
+        ? '<span class="badge">Select severity</span>'
+        : badge(severityBox.value, arterialBox.checked);
+    }
+
+    
+    function safe(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    
+    function fillWardFilter() {
+      const chosen = filterWard.value;
+      const wards = [...new Set(complaints.map(c => c.ward))].sort((a, b) => a - b);
+      filterWard.innerHTML = '<option value="all">All Wards</option>' +
+        wards.map(w => `<option value="${w}">Ward ${w}</option>`).join("");
+      filterWard.value = chosen;
+      if (filterWard.value === "") filterWard.value = "all";
+    }
+
+    
+    function render() {
+      
+      const shown = complaints.filter(c =>
+        (filterWard.value === "all"   || String(c.ward) === filterWard.value) &&
+        (filterStatus.value === "all" || c.status === filterStatus.value) &&
+        
+        (c.street + " " + c.landmark).toLowerCase().includes(searchBox.value.trim().toLowerCase())
+      );
+
+      
+      countLine.textContent = "Showing " + shown.length + " of " + complaints.length + " complaints";
+
+      
+      shown.sort((a, b) =>
+        isUrgent(b.severity, b.arterial) - isUrgent(a.severity, a.arterial) || b.id - a.id
+      );
+
+      
+      tableBody.innerHTML = shown.map(c => {
+        const statusOptions = STATUSES.map(s =>
+          `<option ${s === c.status ? "selected" : ""}>${s}</option>`
+        ).join("");
+
+       
+        const canConfirm = c.status === "Repaired" && !confirmed.includes(c.id);
+
+        return `
+          <tr class="${isUrgent(c.severity, c.arterial) ? "urgent-row" : ""}">
+            <td>#${c.id}</td>
+            <td>${safe(c.street)}<br><small>${safe(c.landmark)}${c.arterial ? " • Arterial road" : ""}</small></td>
+            <td>${c.ward}</td>
+            <td>${c.date || "—"}</td>
+            <td>${c.severity}</td>
+            <td>${badge(c.severity, c.arterial)}</td>
+            <td><select class="status-select" data-id="${c.id}">${statusOptions}</select></td>
+            <td>
+              <button class="confirm-btn" data-id="${c.id}" ${canConfirm ? "" : "disabled"}>
+                ${confirmed.includes(c.id) ? "✔ Confirmed" : "Confirm Repair"}
+              </button>
+              <br><small>${c.confirms} neighbour(s) confirmed</small>
+            </td>
+          </tr>`;
+      }).join("") || '<tr><td colspan="8">No complaints match the filters.</td></tr>';
+
+      
+      document.getElementById("stat-total").textContent    = complaints.length;
+      document.getElementById("stat-urgent").textContent   = complaints.filter(c => isUrgent(c.severity, c.arterial) && c.status !== "Repaired").length;
+      document.getElementById("stat-repaired").textContent = complaints.filter(c => c.status === "Repaired").length;
+    }
+
+    
+    severityBox.addEventListener("change", updatePreview);
+    arterialBox.addEventListener("change", updatePreview);
+    filterWard.addEventListener("change", render);
+    filterStatus.addEventListener("change", render);
+    searchBox.addEventListener("input", render);       
+
+    
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();                       
+
+      const street   = document.getElementById("street").value.trim();
+      const landmark = document.getElementById("landmark").value.trim();
+      const ward     = parseInt(document.getElementById("ward").value);
+      const severity = severityBox.value;
+
+    
+      if (!street || !landmark || !severity || isNaN(ward)) {
+        message.textContent = "Please fill in all the fields.";
+        message.className = "error";
+        return;
+      }
+      if (ward < 1 || ward > 50) {
+        message.textContent = "Ward number must be between 1 and 50.";
+        message.className = "error";
+        return;
+      }
+
+  
+      const id = complaints.length ? Math.max(...complaints.map(c => c.id)) + 1 : 1;
+      complaints.push({ id, street, landmark, ward, severity, arterial: arterialBox.checked, status: "Reported", date: dateText(0), confirms: 0 });
+      save();
+
+      form.reset();
+      updatePreview();
+      fillWardFilter();
+      render();
+      message.textContent = "Complaint #" + id + " submitted successfully.";
+      message.className = "success";
+    });
+
+    
+    tableBody.addEventListener("change", function (event) {
+      if (event.target.classList.contains("status-select")) {
+        const c = complaints.find(c => c.id === Number(event.target.dataset.id));
+        c.status = event.target.value;
+        save();
+        render();
+      }
+    });
+
+    tableBody.addEventListener("click", function (event) {
+      if (event.target.classList.contains("confirm-btn")) {
+        const id = Number(event.target.dataset.id);
+        complaints.find(c => c.id === id).confirms++;
+        confirmed.push(id);                         
+        save();
+        render();
+      }
+    });
+
+    
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);   
+      themeBtn.textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
+      localStorage.setItem("theme", theme);                          
+    }
+
+    themeBtn.addEventListener("click", function () {
+      const now = document.documentElement.getAttribute("data-theme");
+      applyTheme(now === "dark" ? "light" : "dark");
+    });
+
+    
+    applyTheme(localStorage.getItem("theme") || "light");
+    fillWardFilter();
+    updatePreview();
+    render();
+  </script>
+</body>
+</html>
